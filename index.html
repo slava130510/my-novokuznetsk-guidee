@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Достопримечательности Новокузнецка</title>
+    
+    <!-- Стили карты Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #e74c3c;
+            --bg: #f9f9f9;
+            --text: #333;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            scroll-behavior: smooth;
+        }
+
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Страницы */
+        .page { display: none; }
+        .active { display: block; }
+
+        /* Карта */
+        #map {
+            height: 500px;
+            width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 40px;
+            z-index: 1;
+        }
+.leaflet-control-attribution { display: none ! important; } 
+
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--primary);
+            font-size: 1.8rem;
+        }
+
+        /* Сетка карточек под картой */
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 60px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .card-content {
+            padding: 15px;
+        }
+
+        .card-content h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+
+        /* Блок Об авторе */
+        .about-section {
+            background: var(--primary);
+            color: white;
+            padding: 40px 20px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .about-avatar {
+            width: 120px;
+            height: 120px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .about-info h3 { margin: 0 0 10px 0; font-size: 1.5rem; }
+        .about-info p { margin: 5px 0; opacity: 0.9; line-height: 1.5; }
+
+        /* Страница деталей */
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 12px 25px;
+            background: var(--accent);
+            color: white;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .back-btn:hover { opacity: 0.8; }
+
+        .detail-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .gallery img {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 600px) {
+            .about-section { flex-direction: column; text-align: center; }
+            .gallery { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Путеводитель по Новокузнецку</h1>
+    <p>Открой для себя сердце Кузбасса</p>
+</header>
+
+<div class="container">
+    <!-- ГЛАВНАЯ СТРАНИЦА -->
+    <div id="main-page" class="page active">
+        <h2>Карта объектов</h2>
+        <div id="map"></div>
+
+        <h2>Список достопримечательностей</h2>
+        <div class="preview-grid" id="preview-grid">
+            <!-- Карточки генерируются через JS -->
+        </div>
+
+        <!-- БЛОК ОБ АВТОРЕ -->
+        <div class="about-section">
+            <div class="about-avatar">С</div>
+            <div class="about-info">
+                <h3>Об авторе</h3>
+                <p>Меня зовут <strong>Слава</strong>, мне 15 лет.</p>
+                <p>Я являюсь создателем и разработчиком этого проекта. Моя цель — показать красоту и историческую значимость города Новокузнецк с помощью современных технологий.</p>
+                <p><i>Сделано в 2026 году.</i></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- СТРАНИЦА ДЕТАЛЕЙ -->
+    <div id="detail-page" class="page">
+        <div class="back-btn" onclick="showMap()">← Вернуться к карте</div>
+        <div class="detail-content">
+            <h2 id="obj-title" style="text-align: left; margin-bottom: 15px;"></h2>
+            <p id="obj-desc" style="font-size: 1.1rem; line-height: 1.8;"></p>
+            <div class="gallery" id="obj-gallery"></div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    &copy; 2026 Достопримечательности Новокузнецка. Автор: Вячеслав Кудрявцев.
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const locations = [
+        {
+            id: 1,
+            name: "Кузнецкая крепость",
+            coords: [53.7745, 87.1798],
+            mainImg: "4.jpg",
+            desc: "Кузнецкая крепость — памятник истории и архитектуры федерального значения. Построенная в начале XIX века, она служила для защиты южных границ Сибири. Сегодня это музей под открытым небом с мощными бастионами и видом на город. Ссылка на сайт: https://kuzn-krepost.ru/",
+            images: [
+                "k1.jpg",
+"k2.jpg"
+            ]
+        },
+        {
+            id: 2,
+            name: "Спасо-Преображенский собор",
+            coords: [53.7667, 87.1728],
+            mainImg: "6.jpg",
+            desc: "Главный храм Новокузнецка и один из старейших соборов в Кузбассе. Величественное здание в стиле сибирского барокко и классицизма является духовным центром города. Ссылка на сайт: https://преображенскийсобор.рф/?ysclid=mky2p5isb8269249293",
+            images: [
+                "s1.jpg",
+                "s2.jpg"
+            ]
+        },
+        {
+            id: 3,
+            name: "Ретропарк",
+            coords: [53.7554, 87.0984],
+            mainImg: "3.jpg",
+            desc: "Музей автомототехники «Ретропарк» — это частная коллекция удивительных машин. Здесь можно увидеть идеально восстановленные автомобили СССР, Европы и Америки прошлого века. Ссылка на сайт: https://retropark.ru/",
+            images: [
+                "r1.jpg",
+                "r2.jpg"
+            ]
+        },
+        {
+            id: 4,
+            name: "Площадь Побед (КМК)",
+            coords: [53.7445, 87.1123],
+            mainImg: "1.jpg",
+            desc: "Символ трудового подвига города. На площади у заводоуправления КМК установлен легендарный танк Т-34, который был отлит и собран здесь в годы войны. Ссылка на сайт: https://gorodnvkz.ru/pobed",
+            images: [
+                "p1.jpg",
+                "p2.jpg"
+            ]
+        },
+        {
+            id: 5,
+            name: "Дом-музей Ф.М. Достоевского",
+            coords: [53.7600, 87.1764],
+            mainImg: "2.jpg",
+            desc: "В этом доме жил писатель Фёдор Достоевский во время своего пребывания в Кузнецке. Именно здесь происходила его драма любви к Марии Исаевой, которая позже отразилась в его творчестве.  Ссылка на сайт: https://dom-dostoevskogo.ru/",
+            images: [
+                "d1.jpg",
+                "d2.jpg"
+            ]
+        },
+        {
+            id: 6,
+            name: "Драматический театр",
+            coords: [53.7576, 87.1287],
+            mainImg: "5.jpg",
+            desc: "Новокузнецкий драмтеатр — один из крупнейших в регионе. Здание построено в стиле советского неоклассицизма и украшает центральную часть проспекта Металлургов. Ссылка на сайт: https://nvkteatr.ru/",
+            images: [
+                "t1.jpg",
+                "t2.jpg"
+            ]
+        }
+    ];
+
+    // Инициализация карты
+    const map = L.map('map').setView([53.7596, 87.1216], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    const previewGrid = document.getElementById('preview-grid');
+
+    // Наполнение данными
+    locations.forEach
+(loc => {
+        // Добавляем маркер
+        const marker = L.marker(loc.coords).addTo(map);
+        marker.bindPopup(`<b>${loc.name}</b><br><button onclick="showDetails(${loc.id})" style="cursor:pointer; margin-top:5px;">Открыть фото</button>`);
+
+        // Создаем карточку внизу
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.onclick = () => showDetails(loc.id);
+        card.innerHTML = `
+            <img src="${loc.mainImg}" alt="${loc.name}">
+            <div class="card-content">
+                <h3>${loc.name}</h3>
+                <p>${loc.desc.substring(0, 80)}...</p>
+            </div>
+        `;
+        previewGrid.appendChild(card);
+    });
+
+    function showDetails(id) {
+        const obj = locations.find(l => l.id === id);
+        if (!obj) return;
+
+        document.getElementById('obj-title').innerText = obj.name;
+        document.getElementById('obj-desc').innerText = obj.desc;
+        
+        const gallery = document.getElementById('obj-gallery');
+        gallery.innerHTML = ''; 
+        
+        obj.images.forEach(imgUrl => {
+            const img = document.createElement('img');
+            img.src = imgUrl;
+            gallery.appendChild(img);
+        });
+
+        document.getElementById('main-page').classList.remove('active');
+        document.getElementById('detail-page').classList.add('active');
+        window.scrollTo(0,0);
+    }
+
+    function showMap() {
+        document.getElementById('detail-page').classList.remove('active');
+        document.getElementById('main-page').classList.add('active');
+        setTimeout(() => { map.invalidateSize(); }, 100);
+    }
+</script>
+
+</body>
+</html>
